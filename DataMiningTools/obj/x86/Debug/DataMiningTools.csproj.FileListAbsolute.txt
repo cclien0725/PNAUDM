@@ -1,0 +1,10 @@
+c:\users\rck\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\bin\Debug\DataMiningTools.exe
+c:\users\rck\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\bin\Debug\DataMiningTools.pdb
+c:\users\rck\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\obj\x86\Debug\ResolveAssemblyReference.cache
+c:\users\rck\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\obj\x86\Debug\DataMiningTools.Properties.Resources.resources
+c:\users\rck\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\obj\x86\Debug\GenerateResource.read.1.tlog
+c:\users\rck\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\obj\x86\Debug\GenerateResource.write.1.tlog
+c:\users\rck\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\obj\x86\Debug\DataMiningTools.exe
+c:\users\rck\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\obj\x86\Debug\DataMiningTools.pdb
+C:\Users\RCK\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\bin\Debug\DataMiningTools.exe.config
+C:\Users\RCK\documents\visual studio 2010\Projects\DataMiningTools\DataMiningTools\obj\x86\Debug\DataMiningTools.MainForm.resources
