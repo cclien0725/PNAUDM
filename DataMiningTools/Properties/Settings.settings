@@ -2,9 +2,6 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="DataMiningTools.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="HOSTNAME" Type="System.String" Scope="User">
-      <Value Profile="(Default)">localhost</Value>
-    </Setting>
     <Setting Name="USERNAME" Type="System.String" Scope="User">
       <Value Profile="(Default)">sa</Value>
     </Setting>
@@ -13,6 +10,9 @@
     </Setting>
     <Setting Name="DATABASE" Type="System.String" Scope="User">
       <Value Profile="(Default)">NetworkSecurityLog</Value>
+    </Setting>
+    <Setting Name="HOSTNAME" Type="System.String" Scope="User">
+      <Value Profile="(Default)">140.126.130.75</Value>
     </Setting>
   </Settings>
 </SettingsFile>

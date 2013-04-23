@@ -25,18 +25,6 @@ namespace DataMiningTools.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("localhost")]
-        public string HOSTNAME {
-            get {
-                return ((string)(this["HOSTNAME"]));
-            }
-            set {
-                this["HOSTNAME"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("sa")]
         public string USERNAME {
             get {
@@ -68,6 +56,18 @@ namespace DataMiningTools.Properties {
             }
             set {
                 this["DATABASE"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("140.126.130.75")]
+        public string HOSTNAME {
+            get {
+                return ((string)(this["HOSTNAME"]));
+            }
+            set {
+                this["HOSTNAME"] = value;
             }
         }
     }

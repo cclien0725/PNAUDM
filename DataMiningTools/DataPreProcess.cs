@@ -11,6 +11,7 @@ namespace DataMiningTools
         public event EventHandler<DataMiningTools.MainForm.LogEventArgs> onLogMessageRecv;
         public event EventHandler<DataMiningTools.MainForm.ProgressEventArgs> onProgressRecv;
         public event EventHandler<DataMiningTools.MainForm.ProgressEventArgs> onSubProgressRecv;
+        public event EventHandler<DataMiningTools.MainForm.LabelEventArgs> onLabelTextRecv;
         private void LogMessage(string message)
         {
             if (onLogMessageRecv != null)
@@ -32,6 +33,11 @@ namespace DataMiningTools
                     Progress = Convert.ToInt32(Convert.ToDouble(progress) / Convert.ToDouble(total) * 100)
                 });
         }
+        private void ShowLabelText(string text, string target)
+        {
+            if (onLabelTextRecv != null)
+                onLabelTextRecv(this, new MainForm.LabelEventArgs { Text = text, Target = target });
+        }
 
         private SQLUtility sql;
 
@@ -49,6 +55,7 @@ namespace DataMiningTools
         {
             CleanIngnoreData();
             TransformData();
+            InformationEntropy();
         }
         private void CleanIngnoreData()
         {
@@ -81,7 +88,7 @@ namespace DataMiningTools
             }
 
             LogMessage("Starting clean processes...OK!");
-            ShowProgress(1, 2);
+            ShowProgress(1, 3);
         }
         private void TransformData()
         {
@@ -107,7 +114,7 @@ namespace DataMiningTools
             }
 
             LogMessage("Starting transform data processes...OK!");
-            ShowProgress(2, 2);
+            ShowProgress(2, 3);
         }
 
         private void Clear140_126_1_1()
@@ -178,6 +185,133 @@ namespace DataMiningTools
             sql.RunCommand("UPDATE Logs SET City = 'unknown' WHERE City = ''");
             sql.RunCommand("UPDATE Logs SET TCPflags = 'unknown' WHERE TCPflags = ''");
             LogMessage("Filling null cells with \"unknown\"...OK!");
+        }
+
+        private void InformationEntropy()
+        {
+            LogMessage("Starting calculate information entropy...");
+
+            int currentProcess = 0;
+            int allProcess = 6;
+
+            double all_data = int.Parse(sql.GetResult("SELECT Count(*) FROM Logs")[0][0].ToString());
+            double source, country, city, proto, desport, tcpflag;
+            List<EntropySortElement> sortList = new List<EntropySortElement>();
+
+            // Attack Source.
+            source = calcSubjectEntropy(all_data, "Source");
+            LogMessage("Source: " + source);
+            ShowSubProgress(++currentProcess, allProcess);
+
+            country = calcConsiderEntropyWithSubject(all_data, "Country", "Source");
+            LogMessage("Country: " + country);
+            ShowSubProgress(++currentProcess, allProcess);
+
+            city = calcConsiderEntropyWithSubject(all_data, "City", "Source");
+            LogMessage("City: " + city);
+            ShowSubProgress(++currentProcess, allProcess);
+
+            sortList.Add(new EntropySortElement { Name = "Country", Value = (source - country) });
+            sortList.Add(new EntropySortElement { Name = "City", Value = (source - city) });
+            ShowLabelText(showSortingResult(sortList), "lb_src");
+
+            // Attack Type.
+            proto = calcSubjectEntropy(all_data, "Protocol");
+            LogMessage("Protocol: " + proto);
+            ShowSubProgress(++currentProcess, allProcess);
+
+            desport = calcConsiderEntropyWithSubject(all_data, "DestinationPort", "Protocol");
+            LogMessage("Destination Port: " + desport);
+            ShowSubProgress(++currentProcess, allProcess);
+
+            tcpflag = calcConsiderEntropyWithSubject(all_data, "TCPflags", "Protocol");
+            LogMessage("TCP Flags: " + tcpflag);
+            ShowSubProgress(++currentProcess, allProcess);
+
+            sortList.Clear();
+            sortList.Add(new EntropySortElement { Name = "Destination Port", Value = (proto - desport) });
+            sortList.Add(new EntropySortElement { Name = "TCP Flags", Value = (proto - tcpflag) });
+            ShowLabelText(showSortingResult(sortList), "lb_type");
+
+            LogMessage("Starting calculate information entropy...OK!");
+            ShowProgress(3, 3);
+        }
+
+        private double calcSubjectEntropy(double all_data, string subject_dimension)
+        {
+            int all_subject_data;
+            double subject_sum = 0;
+
+            DataView dt_subject = sql.GetResult(string.Format("SELECT {0} FROM Logs GROUP BY {0}", subject_dimension));
+            all_subject_data = dt_subject.Table.Rows.Count;
+
+            for (int i = 0; i < all_subject_data; i++)
+            {
+                string subject = dt_subject[i][subject_dimension].ToString();
+                double count;
+
+                DataView dt1 = sql.GetResult(string.Format("SELECT Count(*) FROM Logs WHERE ({0} = '{1}')", subject_dimension, subject));
+                count = int.Parse(dt1[0][0].ToString());
+
+                subject_sum -= (count / all_data) * Math.Log((count / all_data), 2);
+            }
+
+            return subject_sum;
+        }
+
+        private double calcConsiderEntropyWithSubject(double all_data, string consider_dimension, string subject_dimension)
+        {
+            DataView dt_consider = sql.GetResult(string.Format("SELECT {0} FROM Logs GROUP BY {0}", consider_dimension));
+            double consider_sum = 0;
+
+            for (int i = 0; i < dt_consider.Table.Rows.Count; i++)
+            {
+                string consider = dt_consider[i][consider_dimension].ToString();
+
+                double all_subject_for_consider_count = int.Parse(sql.GetResult(string.Format("SELECT Count(*) FROM Logs WHERE ({0} = '{1}')", consider_dimension, consider))[0][0].ToString());
+                DataView dt = sql.GetResult(string.Format("SELECT {0} FROM Logs WHERE ({1} = '{2}') GROUP BY {0}", subject_dimension, consider_dimension, consider));
+
+                for (int j = 0; j < dt.Table.Rows.Count; j++)
+                {
+                    string subject = dt[j][subject_dimension].ToString();
+                    double count = int.Parse(sql.GetResult(string.Format("SELECT Count(*) FROM Logs WHERE ({0} = '{1}') and ({2} = '{3}')", consider_dimension, consider, subject_dimension, subject))[0][0].ToString());
+
+                    consider_sum -= (count / all_subject_for_consider_count) * Math.Log((count / all_subject_for_consider_count), 2);
+                }
+                consider_sum *= all_subject_for_consider_count / all_data;
+            }
+            return consider_sum;
+        }
+
+        private string showSortingResult(List<EntropySortElement> list)
+        {
+            if (list.Count > 0)
+            {
+                list.Sort();
+
+                StringBuilder sb = new StringBuilder();
+
+                sb.Append(string.Format("Result: ({0}, {1})", list[0].Name, list[0].Value));
+                for (int i = 1; i < list.Count; i++)
+                    sb.Append(string.Format(" > ({0}, {1})", list[i].Name, list[i].Value));
+
+                LogMessage(sb.ToString());
+                return sb.ToString();
+            }
+            return "";
+        }
+
+        private class EntropySortElement : IComparable<EntropySortElement>
+        {
+            public string Name { get; set; }
+            public double Value { get; set; }
+
+            public int CompareTo(EntropySortElement other)
+            {
+                if (this.Value < other.Value) return 1;
+                else if (this.Value > other.Value) return -1;
+                else return 0;
+            }
         }
     }
 }

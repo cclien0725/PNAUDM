@@ -21,6 +21,11 @@ namespace DataMiningTools
         {
             public string Message { get; set; }
         }
+        public class LabelEventArgs : EventArgs
+        {
+            public string Text { get; set; }
+            public string Target { get; set; }
+        }
         private SQLUtility sql;
         private string[] CSVFiles;
         private ImportData import;
@@ -170,11 +175,24 @@ namespace DataMiningTools
                 dataProcess.onLogMessageRecv += new EventHandler<LogEventArgs>(dataProcess_onLogMessageRecv);
                 dataProcess.onProgressRecv += new EventHandler<ProgressEventArgs>(onProgressRecv);
                 dataProcess.onSubProgressRecv += new EventHandler<ProgressEventArgs>(onSubProgressRecv);
+                dataProcess.onLabelTextRecv += new EventHandler<LabelEventArgs>(dataProcess_onLabelTextRecv);
                 dataProcess.StartDataProcess();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
+            }
+        }
+
+        void dataProcess_onLabelTextRecv(object sender, MainForm.LabelEventArgs e)
+        {
+            if (InvokeRequired)
+                Invoke((MethodInvoker)delegate { dataProcess_onLabelTextRecv(sender, e); });
+            else
+            {
+                Label lb = GetType().GetField(e.Target, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(this) as Label;
+                if (lb != null)
+                    lb.Text = e.Text;
             }
         }
 
@@ -184,36 +202,6 @@ namespace DataMiningTools
                 Invoke((MethodInvoker)delegate { dataProcess_onLogMessageRecv(sender, e); });
             else
                 showMessageOnBox(e.Message, tbx_LogBox2);
-        }
-
-        private void btn_info_start_Click(object sender, EventArgs e)
-        {
-            int all_source_data;
-            double all_data, sum = 0;
-
-            DataView dt = sql.GetResult("SELECT Count(*) FROM Logs");
-            all_data = int.Parse(dt[0][0].ToString());
-
-            dt = sql.GetResult("SELECT Source From Logs GROUP BY Source");
-            all_source_data = dt.Table.Rows.Count;
-            
-            for (int i = 0; i < all_source_data; i++)
-            {
-                string ip = dt[i]["Source"].ToString();
-                double count;
-
-                DataView dt1 = sql.GetResult(string.Format("SELECT Count(*) FROM Logs WHERE (Source = '{0}')", ip));
-                count = int.Parse(dt1[0][0].ToString());
-
-                sum -= (count / all_data) * Math.Log((count / all_data), 2);
-                File.AppendAllText(Environment.CurrentDirectory + "cal.txt", string.Format("{0}\n", count));
-                //if (sum > 1)
-                //{
-
-                //}
-            }
-            label5.Text += ": " + sum; 
-
         }
     }
 }
