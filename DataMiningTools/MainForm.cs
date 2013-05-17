@@ -169,6 +169,8 @@ namespace DataMiningTools
                                       ClearARPs = cbx_ClearRouterARP.Checked,
                                       ClearUserIP = cbx_ClearUserIP.Checked,
                                       ClearDNS = cbx_ClearDNS.Checked,
+                                      ClearIPv6s = cbx_ClearIPv6.Checked,
+                                      ClassifyAT = cbx_ClassifyAT.Checked,
                                       TransferIP2Geo = cbx_TransferIP.Checked,
                                       FillNull = cbx_FillNull.Checked
                                   };

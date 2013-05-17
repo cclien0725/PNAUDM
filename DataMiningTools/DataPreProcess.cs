@@ -44,8 +44,10 @@ namespace DataMiningTools
         public bool ClearDNS { get; set; }
         public bool ClearUserIP { get; set; }
         public bool ClearARPs { get; set; }
+        public bool ClearIPv6s { get; set; }
         public bool TransferIP2Geo { get; set; }
         public bool FillNull { get; set; }
+        public bool ClassifyAT { get; set; }
 
         public DataPreProcess()
         {
@@ -67,24 +69,38 @@ namespace DataMiningTools
             if (ClearDNS) allProcess++;
             if (ClearUserIP) allProcess++;
             if (ClearARPs) allProcess++;
+            if (ClearIPv6s) allProcess++;
+            if (ClassifyAT) allProcess++;
 
             // Start processes
             if (ClearDNS)
             {
                 Clear140_126_1_1();
-                ShowSubProgress(++currentProcess, allProcess);
+                ShowSubProgress(currentProcess++, allProcess);
             }
 
             if (ClearUserIP)
             {
                 ClearOurUsingIP();
-                ShowSubProgress(++currentProcess, allProcess);
+                ShowSubProgress(currentProcess++, allProcess);
             }
 
             if (ClearARPs)
             {
                 ClearARP();
-                ShowSubProgress(++currentProcess, allProcess);
+                ShowSubProgress(currentProcess++, allProcess);
+            }
+
+            if (ClearIPv6s)
+            {
+                ClearIPv6();
+                ShowSubProgress(currentProcess++, allProcess);
+            }
+
+            if (ClassifyAT)
+            {
+                ClassifyAttackType();
+                ShowSubProgress(currentProcess++, allProcess);
             }
 
             LogMessage("Starting clean processes...OK!");
@@ -127,12 +143,13 @@ namespace DataMiningTools
 
         private void ClearOurUsingIP()
         {
-            LogMessage("Deleting user IP...");
-            sql.RunCommand("DELETE FROM Logs WHERE source = '140.126.130.74'");
-            sql.RunCommand("DELETE FROM Logs WHERE source = '140.126.130.38'");
-            sql.RunCommand("DELETE FROM Logs WHERE source = '140.126.130.39'");
-            sql.RunCommand("DELETE FROM Logs WHERE source = '140.126.130.73'");
-            LogMessage("Deleting user IP...OK!");
+            LogMessage("Updating user IP...");
+            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.74'");
+            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.38'");
+            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.39'");
+            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.73'");
+            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.42'");
+            LogMessage("Updating user IP...OK!");
         }
 
         private void ClearARP()
@@ -144,7 +161,289 @@ namespace DataMiningTools
             sql.RunCommand("DELETE FROM Logs WHERE source = 'ZyxelCom_d1:45:72'");
             sql.RunCommand("DELETE FROM Logs WHERE source = 'AsustekC_f6:cb:0a'");
             sql.RunCommand("DELETE FROM Logs WHERE source = 'PlanexCo_c2:c9:7b'");
+            sql.RunCommand("DELETE FROM Logs WHERE source = '12:34:56:78:90:AB'");
             LogMessage("Deleting router ARP...OK!");
+        }
+
+        private void ClearIPv6()
+        {
+            LogMessage("Deleting IPv6...");
+            sql.RunCommand("DELETE FROM Logs WHERE Protocol = 'IPv6'");
+            LogMessage("Deleting IPv6...OK!");
+        }
+
+        private void ClassifyAttackType()
+        {
+            LogMessage("Classifying Attack Type...");
+            int allProcess;
+            int currentProcess;
+            string sqlCountCmd;
+            string sqlUpdateCmd;
+            
+            #region Claasify Not Listening port
+            List<AllowItem> allowList = new List<AllowItem>();
+            allowList.Add(new AllowItem { Protocol = "TCP", Port = 111 });
+            allowList.Add(new AllowItem { Protocol = "TCP", Port = 21 });
+            allowList.Add(new AllowItem { Protocol = "TCP", Port = 22 });
+            allowList.Add(new AllowItem { Protocol = "TCP", Port = 54745 });
+            allowList.Add(new AllowItem { Protocol = "TCP", Port = 3306 });
+            allowList.Add(new AllowItem { Protocol = "TCP", Port = 80 });
+            allowList.Add(new AllowItem { Protocol = "TCP", Port = 41058 });
+            allowList.Add(new AllowItem { Protocol = "UDP", Port = 111 });
+            allowList.Add(new AllowItem { Protocol = "UDP", Port = 46605 });
+            allowList.Add(new AllowItem { Protocol = "UDP", Port = 937 });
+            allowList.Add(new AllowItem { Protocol = "UDP", Port = 936 });
+            allowList.Add(new AllowItem { Protocol = "UDP", Port = 48730 });
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat("WHERE DestinationPort NOT IN (" + allowList[0].Port);
+            for (int i = 1; i < allowList.Count; i++)
+                sb.AppendFormat(", {0}", allowList[i].Port);
+            sb.Append(") and SourcePort not in (80)");
+
+            sql.RunCommand("UPDATE Logs SET AT = 'Port_Sweep' " + sb.ToString());
+            // Normal for update.
+            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE SourcePort = 80");
+            #endregion
+
+            #region Claasify Port 22
+            sqlCountCmd = "SELECT COUNT(*) FROM Logs WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 22 and AT IS NULL";
+            sqlUpdateCmd = "UPDATE Logs SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 22 and AT IS NULL";
+            DataView dt_port_22 = sql.GetResult("SELECT Source, SourcePort FROM Logs WHERE DestinationPort = 22 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
+            allProcess = dt_port_22.Table.Rows.Count;
+            currentProcess = 0;
+
+            for (int i = 0; i < dt_port_22.Table.Rows.Count; i++)
+            {
+                string Source = dt_port_22[i]["Source"].ToString();
+                int SourcePort = Convert.ToInt32(dt_port_22[i]["SourcePort"].ToString());
+
+                int totalCount = Convert.ToInt32(sql.GetResult(string.Format(sqlCountCmd, Source, SourcePort))[0][0].ToString());
+                // Port_Sweep
+                if (totalCount <= 2)
+                {
+                    sql.RunCommand(string.Format(sqlUpdateCmd, "Port_Sweep", Source, SourcePort));
+                    //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Port_Sweep");
+                }
+                else
+                {
+                    string likeCommand = sqlCountCmd + " and Convert(varchar(255), Info) LIKE '{2}'";
+                    int syncCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%SYN%"))[0][0].ToString());
+                    int rstCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%RST%"))[0][0].ToString());
+                    int tcpreasCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "[[]TCP segment of a reassembled PDU]"))[0][0].ToString());
+                    int newKeyCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%New Keys%"))[0][0].ToString());
+                    int encryptCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "Encrypted request packet len%"))[0][0].ToString());
+
+                    if (syncCount > 0 && rstCount > 0 && syncCount == rstCount)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Port_Sweep", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Port_Sweep");
+                    }
+                    // Guess_Password
+                    else if (tcpreasCount == 3)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Guess_Password", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Guess_Password");
+                    }
+                    else if (encryptCount == 3)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Guess_Password", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", " + totalCount + "/" + newKeyCount + " = 3 > Guess_Password (encrypt)");
+                    }
+                    else if (tcpreasCount > 3)
+                    {
+                        // Guess_Password
+                        if (newKeyCount != 0 && tcpreasCount / newKeyCount == 3)
+                        {
+                            sql.RunCommand(string.Format(sqlUpdateCmd, "Guess_Password", Source, SourcePort));
+                            //LogMessage(Source + ", " + SourcePort + ", " + totalCount + "/" + newKeyCount + " = 3 > Guess_Password");
+                        }
+                        else if (tcpreasCount == 6)
+                        {
+                            sql.RunCommand(string.Format(sqlUpdateCmd, "Guess_Password", Source, SourcePort));
+                            //LogMessage(Source + ", " + SourcePort + ", " + totalCount + "/" + newKeyCount + " = 3 > Guess_Password (tcp)");
+                        }
+                        else
+                        {
+                            sql.RunCommand(string.Format(sqlUpdateCmd, "Normal", Source, SourcePort));
+                        }
+                    }
+                    else
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Normal", Source, SourcePort));
+                    }
+                }
+
+                ShowSubProgress(++currentProcess, allProcess);
+            }
+            #endregion
+            
+            #region Classify Port 80
+            sqlCountCmd = "SELECT COUNT(*) FROM Logs WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 80 and AT IS NULL";
+            sqlUpdateCmd = "UPDATE Logs SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 80 and AT IS NULL";
+            DataView dt_port_80 = sql.GetResult("SELECT Source, SourcePort FROM Logs WHERE DestinationPort = 80 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
+            allProcess = dt_port_80.Table.Rows.Count;
+            currentProcess = 0;
+            
+            for (int i = 0; i < dt_port_80.Table.Rows.Count; i++)
+            {
+                string Source = dt_port_80[i]["Source"].ToString();
+                int SourcePort = Convert.ToInt32(dt_port_80[i]["SourcePort"].ToString());
+
+                int totalCount = Convert.ToInt32(sql.GetResult(string.Format(sqlCountCmd, Source, SourcePort))[0][0].ToString());
+                // Port_Sweep
+                if (totalCount <= 2)
+                {
+                    sql.RunCommand(string.Format(sqlUpdateCmd, "Port_Sweep", Source, SourcePort));
+                    //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Port_Sweep");
+                }
+                else
+                {
+                    string likeCommand = sqlCountCmd + " and Convert(varchar(255), Info) LIKE '{2}'";
+                    int syncCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%SYN%"))[0][0].ToString());
+                    int rstCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%RST%"))[0][0].ToString());
+                    int headCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "HEAD%"))[0][0].ToString());
+                    int robotCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "GET %robots%"))[0][0].ToString());
+                    int readmeCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "GET %README%"))[0][0].ToString());
+                    int managerCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "GET %manager%"))[0][0].ToString());
+                    int mutihopCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "GET http://%"))[0][0].ToString());
+
+                    if (syncCount > 0 && rstCount > 0 && syncCount == rstCount)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Port_Sweep", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", count: " + headCount + " > Port_Sweep");
+                    }
+                    // Brute_Force
+                    else if (headCount > 0)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Brute_Force", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", count: " + headCount + " > Brute_Force (HEAD)");
+                    }
+                    else if (robotCount > 0)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Brute_Force", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", count: " + robotCount + " > Brute_Force (GET %robots%)");
+                    }
+                    else if (readmeCount > 0)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Brute_Force", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", count: " + readmeCount + " > Brute_Force (GET %README%)");
+                    }
+                    else if (managerCount > 0)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Brute_Force", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", count: " + managerCount + " > Brute_Force (GET %manager%)");
+                    }
+                    else if (mutihopCount > 0)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Multihop", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", count: " + managerCount + " > Multihop (GET http://%)");
+                    }
+                    else
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Normal", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", count: " + totalCount + " > Normal");
+                    }
+                }
+
+                ShowSubProgress(++currentProcess, allProcess);
+            }
+            #endregion
+            
+
+            #region Classify Port 21
+            sqlCountCmd = "SELECT COUNT(*) FROM Logs WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 21 and AT IS NULL";
+            sqlUpdateCmd = "UPDATE Logs SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 21 and AT IS NULL";
+            DataView dt_port_21 = sql.GetResult("SELECT Source, SourcePort FROM Logs WHERE DestinationPort = 21 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
+            allProcess = dt_port_21.Table.Rows.Count;
+            currentProcess = 0;
+
+            for (int i = 0; i < dt_port_21.Table.Rows.Count; i++)
+            {
+                string Source = dt_port_21[i]["Source"].ToString();
+                int SourcePort = Convert.ToInt32(dt_port_21[i]["SourcePort"].ToString());
+
+                int totalCount = Convert.ToInt32(sql.GetResult(string.Format(sqlCountCmd, Source, SourcePort))[0][0].ToString());
+                // Port_Sweep
+                if (totalCount <= 2)
+                {
+                    sql.RunCommand(string.Format(sqlUpdateCmd, "Port_Sweep", Source, SourcePort));
+                    //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Port_Sweep");
+                }
+                else
+                {
+                    string likeCommand = sqlCountCmd + " and Convert(varchar(255), Info) LIKE '{2}'";
+                    int syncCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%SYN%"))[0][0].ToString());
+                    int rstCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%RST%"))[0][0].ToString());
+                    int count = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%anonymous%"))[0][0].ToString());
+
+                    // Port_Sweep
+                    if (syncCount > 0 && rstCount > 0 && syncCount == rstCount)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Port_Sweep", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Port_Sweep");
+                    }
+                    else if (count > 0)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Guess_Password", Source, SourcePort));
+                       //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Guess_Password");
+                    }
+                    else
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Normal", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Normal");
+                    }
+                }
+
+                ShowSubProgress(++currentProcess, allProcess);
+            }
+
+            #endregion
+
+            #region Classify Port 3306
+            sqlCountCmd = "SELECT COUNT(*) FROM Logs WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 3306 and AT IS NULL";
+            sqlUpdateCmd = "UPDATE Logs SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 3306 and AT IS NULL";
+            DataView dt_port_3306 = sql.GetResult("SELECT Source, SourcePort FROM Logs WHERE DestinationPort = 3306 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
+            allProcess = dt_port_3306.Table.Rows.Count;
+            currentProcess = 0;
+
+            for (int i = 0; i < dt_port_3306.Table.Rows.Count; i++)
+            {
+                string Source = dt_port_3306[i]["Source"].ToString();
+                int SourcePort = Convert.ToInt32(dt_port_3306[i]["SourcePort"].ToString());
+
+                int totalCount = Convert.ToInt32(sql.GetResult(string.Format(sqlCountCmd, Source, SourcePort))[0][0].ToString());
+                // Port_Sweep
+                if (totalCount <= 2)
+                {
+                    sql.RunCommand(string.Format(sqlUpdateCmd, "Port_Sweep", Source, SourcePort));
+                    //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Port_Sweep");
+                }
+                else
+                {
+                    string likeCommand = sqlCountCmd + " and Convert(varchar(255), Info) LIKE '{2}'";
+                    int syncCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%SYN%"))[0][0].ToString());
+                    int rstCount = Convert.ToInt32(sql.GetResult(string.Format(likeCommand, Source, SourcePort, "%RST%"))[0][0].ToString());
+
+                    // Port_Sweep
+                    if (syncCount > 0 && rstCount > 0 && syncCount == rstCount)
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Port_Sweep", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Port_Sweep");
+                    }
+                    else
+                    {
+                        sql.RunCommand(string.Format(sqlUpdateCmd, "Guess_Password", Source, SourcePort));
+                        //LogMessage(Source + ", " + SourcePort + ", cout: " + totalCount + " > Guess_Password");
+                    }
+                }
+
+                ShowSubProgress(++currentProcess, allProcess);
+            }
+
+            #endregion
+            
+            LogMessage("Classifying Attack Type...OK!");
         }
 
         private void TransformIP2GeoLocation()
@@ -312,6 +611,12 @@ namespace DataMiningTools
                 else if (this.Value > other.Value) return -1;
                 else return 0;
             }
+        }
+
+        private class AllowItem
+        {
+            public string Protocol { get; set; }
+            public int Port { get; set; }
         }
     }
 }

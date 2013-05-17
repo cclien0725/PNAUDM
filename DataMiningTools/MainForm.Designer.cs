@@ -60,6 +60,8 @@
             this.SubProgress = new System.Windows.Forms.ProgressBar();
             this.ALLProgress = new System.Windows.Forms.ProgressBar();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
+            this.cbx_ClassifyAT = new System.Windows.Forms.CheckBox();
+            this.cbx_ClearIPv6 = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.tabControl1.SuspendLayout();
             this.DataViewPage.SuspendLayout();
@@ -311,6 +313,8 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.cbx_ClearIPv6);
+            this.groupBox1.Controls.Add(this.cbx_ClassifyAT);
             this.groupBox1.Controls.Add(this.cbx_ClearRouterARP);
             this.groupBox1.Controls.Add(this.cbx_ClearUserIP);
             this.groupBox1.Controls.Add(this.cbx_ClearDNS);
@@ -394,6 +398,30 @@
             this.openFileDialog1.Filter = "csv files| *.csv";
             this.openFileDialog1.Multiselect = true;
             // 
+            // cbx_ClassifyAT
+            // 
+            this.cbx_ClassifyAT.AutoSize = true;
+            this.cbx_ClassifyAT.Checked = true;
+            this.cbx_ClassifyAT.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbx_ClassifyAT.Location = new System.Drawing.Point(6, 118);
+            this.cbx_ClassifyAT.Name = "cbx_ClassifyAT";
+            this.cbx_ClassifyAT.Size = new System.Drawing.Size(131, 19);
+            this.cbx_ClassifyAT.TabIndex = 3;
+            this.cbx_ClassifyAT.Text = "Classify Attack Type";
+            this.cbx_ClassifyAT.UseVisualStyleBackColor = true;
+            // 
+            // cbx_ClearIPv6
+            // 
+            this.cbx_ClearIPv6.AutoSize = true;
+            this.cbx_ClearIPv6.Checked = true;
+            this.cbx_ClearIPv6.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbx_ClearIPv6.Location = new System.Drawing.Point(6, 95);
+            this.cbx_ClearIPv6.Name = "cbx_ClearIPv6";
+            this.cbx_ClearIPv6.Size = new System.Drawing.Size(81, 19);
+            this.cbx_ClearIPv6.TabIndex = 4;
+            this.cbx_ClearIPv6.Text = "Clear IPv6";
+            this.cbx_ClearIPv6.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -462,6 +490,8 @@
         private System.Windows.Forms.Label lb_type;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.Label lb_src;
+        private System.Windows.Forms.CheckBox cbx_ClassifyAT;
+        private System.Windows.Forms.CheckBox cbx_ClearIPv6;
     }
 }
 
