@@ -12,7 +12,10 @@
       <Value Profile="(Default)">NetworkSecurityLog</Value>
     </Setting>
     <Setting Name="HOSTNAME" Type="System.String" Scope="User">
-      <Value Profile="(Default)">140.126.130.75</Value>
+      <Value Profile="(Default)">140.126.130.74</Value>
+    </Setting>
+    <Setting Name="TABLE" Type="System.String" Scope="User">
+      <Value Profile="(Default)">TestLogs</Value>
     </Setting>
   </Settings>
 </SettingsFile>

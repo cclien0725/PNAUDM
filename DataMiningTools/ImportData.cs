@@ -18,6 +18,7 @@ namespace DataMiningTools
             public string Length { get; set; }
             public string Info { get; set; }
             public string TCPflags { get; set; }
+            public string AT { get; set; }
         }
         public class LogCompare : IEqualityComparer<Log>
         {

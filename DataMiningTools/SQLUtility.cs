@@ -56,7 +56,7 @@ namespace DataMiningTools
                     SqlTransaction trans = conn.BeginTransaction();
                     using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.KeepIdentity, trans) 
                                                       {
-                                                          DestinationTableName = "Logs",
+                                                          DestinationTableName = Properties.Settings.Default.TABLE,
                                                           NotifyAfter = 5000
                                                       })
                     {
@@ -70,7 +70,7 @@ namespace DataMiningTools
                     trans.Commit();
 
                     // Delete duplicate data.
-                    SqlCommand cmd = new SqlCommand("DELETE FROM Logs WHERE id NOT IN(SELECT Min(id) FROM Logs GROUP BY Time, Protocol)", conn);
+                    SqlCommand cmd = new SqlCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE id NOT IN(SELECT Min(id) FROM " + Properties.Settings.Default.TABLE + " GROUP BY Time, Protocol)", conn);
                     cmd.ExecuteNonQuery();
                 }
             }

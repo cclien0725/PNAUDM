@@ -99,7 +99,7 @@ namespace DataMiningTools
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            tbx_SqlCommand.Text = "SELECT TOP(100) * FROM Logs";
+            tbx_SqlCommand.Text = "SELECT TOP(100) * FROM " + Properties.Settings.Default.TABLE;
             sql = new SQLUtility();
             ParameterizedThreadStart t = new ParameterizedThreadStart(SendCommand);
             StartThread(t, "");

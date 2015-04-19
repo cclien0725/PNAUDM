@@ -136,39 +136,39 @@ namespace DataMiningTools
         private void Clear140_126_1_1()
         {
             LogMessage("Deleting DNS IP...");
-            sql.RunCommand("DELETE FROM Logs WHERE source = '140.126.1.1'");
-            sql.RunCommand("DELETE FROM Logs WHERE destination = '140.126.1.1'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE source = '140.126.1.1'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE destination = '140.126.1.1'");
             LogMessage("Deleting DNS IP...OK!");
         }
 
         private void ClearOurUsingIP()
         {
             LogMessage("Updating user IP...");
-            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.74'");
-            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.38'");
-            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.39'");
-            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.73'");
-            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE source = '140.126.130.42'");
+            sql.RunCommand("UPDATE " + Properties.Settings.Default.TABLE + " SET AT = 'Normal' WHERE source = '140.126.130.74'");
+            sql.RunCommand("UPDATE " + Properties.Settings.Default.TABLE + " SET AT = 'Normal' WHERE source = '140.126.130.38'");
+            sql.RunCommand("UPDATE " + Properties.Settings.Default.TABLE + " SET AT = 'Normal' WHERE source = '140.126.130.39'");
+            sql.RunCommand("UPDATE " + Properties.Settings.Default.TABLE + " SET AT = 'Normal' WHERE source = '140.126.130.73'");
+            sql.RunCommand("UPDATE " + Properties.Settings.Default.TABLE + " SET AT = 'Normal' WHERE source = '140.126.130.42'");
             LogMessage("Updating user IP...OK!");
         }
 
         private void ClearARP()
         {
             LogMessage("Deleting router ARP...");
-            sql.RunCommand("DELETE FROM Logs WHERE source = 'Cisco_b3:08:44'");
-            sql.RunCommand("DELETE FROM Logs WHERE source = 'Elitegro_92:a8:fe'");
-            sql.RunCommand("DELETE FROM Logs WHERE source = 'Giga-Byt_4f:90:25'");
-            sql.RunCommand("DELETE FROM Logs WHERE source = 'ZyxelCom_d1:45:72'");
-            sql.RunCommand("DELETE FROM Logs WHERE source = 'AsustekC_f6:cb:0a'");
-            sql.RunCommand("DELETE FROM Logs WHERE source = 'PlanexCo_c2:c9:7b'");
-            sql.RunCommand("DELETE FROM Logs WHERE source = '12:34:56:78:90:AB'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE source = 'Cisco_b3:08:44'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE source = 'Elitegro_92:a8:fe'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE source = 'Giga-Byt_4f:90:25'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE source = 'ZyxelCom_d1:45:72'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE source = 'AsustekC_f6:cb:0a'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE source = 'PlanexCo_c2:c9:7b'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE source = '12:34:56:78:90:AB'");
             LogMessage("Deleting router ARP...OK!");
         }
 
         private void ClearIPv6()
         {
             LogMessage("Deleting IPv6...");
-            sql.RunCommand("DELETE FROM Logs WHERE Protocol = 'IPv6'");
+            sql.RunCommand("DELETE FROM " + Properties.Settings.Default.TABLE + " WHERE Protocol = 'IPv6'");
             LogMessage("Deleting IPv6...OK!");
         }
 
@@ -201,15 +201,15 @@ namespace DataMiningTools
                 sb.AppendFormat(", {0}", allowList[i].Port);
             sb.Append(") and SourcePort not in (80)");
 
-            sql.RunCommand("UPDATE Logs SET AT = 'Port_Sweep' " + sb.ToString());
+            sql.RunCommand("UPDATE " + Properties.Settings.Default.TABLE + " SET AT = 'Port_Sweep' " + sb.ToString());
             // Normal for update.
-            sql.RunCommand("UPDATE Logs SET AT = 'Normal' WHERE SourcePort = 80");
+            sql.RunCommand("UPDATE " + Properties.Settings.Default.TABLE + " SET AT = 'Normal' WHERE SourcePort = 80");
             #endregion
 
             #region Claasify Port 22
-            sqlCountCmd = "SELECT COUNT(*) FROM Logs WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 22 and AT IS NULL";
-            sqlUpdateCmd = "UPDATE Logs SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 22 and AT IS NULL";
-            DataView dt_port_22 = sql.GetResult("SELECT Source, SourcePort FROM Logs WHERE DestinationPort = 22 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
+            sqlCountCmd = "SELECT COUNT(*) FROM " + Properties.Settings.Default.TABLE + " WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 22 and AT IS NULL";
+            sqlUpdateCmd = "UPDATE " + Properties.Settings.Default.TABLE + " SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 22 and AT IS NULL";
+            DataView dt_port_22 = sql.GetResult("SELECT Source, SourcePort FROM " + Properties.Settings.Default.TABLE + " WHERE DestinationPort = 22 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
             allProcess = dt_port_22.Table.Rows.Count;
             currentProcess = 0;
 
@@ -279,9 +279,9 @@ namespace DataMiningTools
             #endregion
             
             #region Classify Port 80
-            sqlCountCmd = "SELECT COUNT(*) FROM Logs WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 80 and AT IS NULL";
-            sqlUpdateCmd = "UPDATE Logs SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 80 and AT IS NULL";
-            DataView dt_port_80 = sql.GetResult("SELECT Source, SourcePort FROM Logs WHERE DestinationPort = 80 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
+            sqlCountCmd = "SELECT COUNT(*) FROM " + Properties.Settings.Default.TABLE + " WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 80 and AT IS NULL";
+            sqlUpdateCmd = "UPDATE " + Properties.Settings.Default.TABLE + " SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 80 and AT IS NULL";
+            DataView dt_port_80 = sql.GetResult("SELECT Source, SourcePort FROM " + Properties.Settings.Default.TABLE + " WHERE DestinationPort = 80 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
             allProcess = dt_port_80.Table.Rows.Count;
             currentProcess = 0;
             
@@ -352,9 +352,9 @@ namespace DataMiningTools
             
 
             #region Classify Port 21
-            sqlCountCmd = "SELECT COUNT(*) FROM Logs WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 21 and AT IS NULL";
-            sqlUpdateCmd = "UPDATE Logs SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 21 and AT IS NULL";
-            DataView dt_port_21 = sql.GetResult("SELECT Source, SourcePort FROM Logs WHERE DestinationPort = 21 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
+            sqlCountCmd = "SELECT COUNT(*) FROM " + Properties.Settings.Default.TABLE + " WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 21 and AT IS NULL";
+            sqlUpdateCmd = "UPDATE " + Properties.Settings.Default.TABLE + " SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 21 and AT IS NULL";
+            DataView dt_port_21 = sql.GetResult("SELECT Source, SourcePort FROM " + Properties.Settings.Default.TABLE + " WHERE DestinationPort = 21 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
             allProcess = dt_port_21.Table.Rows.Count;
             currentProcess = 0;
 
@@ -401,9 +401,9 @@ namespace DataMiningTools
             #endregion
 
             #region Classify Port 3306
-            sqlCountCmd = "SELECT COUNT(*) FROM Logs WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 3306 and AT IS NULL";
-            sqlUpdateCmd = "UPDATE Logs SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 3306 and AT IS NULL";
-            DataView dt_port_3306 = sql.GetResult("SELECT Source, SourcePort FROM Logs WHERE DestinationPort = 3306 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
+            sqlCountCmd = "SELECT COUNT(*) FROM " + Properties.Settings.Default.TABLE + " WHERE Source = '{0}' and SourcePort = {1} and DestinationPort = 3306 and AT IS NULL";
+            sqlUpdateCmd = "UPDATE " + Properties.Settings.Default.TABLE + " SET AT = '{0}' WHERE Source = '{1}' and SourcePort = {2} and DestinationPort = 3306 and AT IS NULL";
+            DataView dt_port_3306 = sql.GetResult("SELECT Source, SourcePort FROM " + Properties.Settings.Default.TABLE + " WHERE DestinationPort = 3306 and AT IS NULL GROUP BY Source, SourcePort, DestinationPort");
             allProcess = dt_port_3306.Table.Rows.Count;
             currentProcess = 0;
 
@@ -452,7 +452,7 @@ namespace DataMiningTools
             {
                 LogMessage("Transforming source IP to geolocation...");
 
-                DataView dt = sql.GetResult("SELECT Source FROM Logs GROUP BY Source");
+                DataView dt = sql.GetResult("SELECT Source FROM " + Properties.Settings.Default.TABLE + " GROUP BY Source");
                 for (int i = 0; i < dt.Table.Rows.Count; i++)
                 {
                     string IP = dt[i]["Source"].ToString();
@@ -465,9 +465,9 @@ namespace DataMiningTools
                                             + Convert.ToInt64(splitedIP[3]);
                         DataView geoDt = sql.GetResult(string.Format("SELECT city, country FROM GeoIPBlocks, GeoIPLocation WHERE {0} BETWEEN startIpNum AND endIpNum AND GeoIPBlocks.locId = GeoIPLocation.locId", integer_ip));
                         if (geoDt.Count > 0)
-                            sql.RunCommand(string.Format("UPDATE Logs SET Country = '{0}', City = '{1}' WHERE Source = '{2}'", geoDt[0]["country"], geoDt[0]["city"], IP));
+                            sql.RunCommand(string.Format("UPDATE " + Properties.Settings.Default.TABLE + " SET Country = '{0}', City = '{1}' WHERE Source = '{2}'", geoDt[0]["country"], geoDt[0]["city"], IP));
                         else
-                            sql.RunCommand(string.Format("UPDATE Logs SET Country = '{0}', City = '{1}' WHERE Source = '{2}'", "unknown", "unknown", IP));
+                            sql.RunCommand(string.Format("UPDATE " + Properties.Settings.Default.TABLE + " SET Country = '{0}', City = '{1}' WHERE Source = '{2}'", "unknown", "unknown", IP));
                     }
                 }
 
@@ -481,8 +481,8 @@ namespace DataMiningTools
         private void FillNullCells()
         {
             LogMessage("Filling null cells with \"unknown\"...");
-            sql.RunCommand("UPDATE Logs SET City = 'unknown' WHERE City = ''");
-            sql.RunCommand("UPDATE Logs SET TCPflags = 'unknown' WHERE TCPflags = ''");
+            sql.RunCommand("UPDATE " + Properties.Settings.Default.TABLE + " SET City = 'unknown' WHERE City = ''");
+            sql.RunCommand("UPDATE " + Properties.Settings.Default.TABLE + " SET TCPflags = 'unknown' WHERE TCPflags = ''");
             LogMessage("Filling null cells with \"unknown\"...OK!");
         }
 
@@ -493,7 +493,7 @@ namespace DataMiningTools
             int currentProcess = 0;
             int allProcess = 6;
 
-            double all_data = int.Parse(sql.GetResult("SELECT Count(*) FROM Logs")[0][0].ToString());
+            double all_data = int.Parse(sql.GetResult("SELECT Count(*) FROM " + Properties.Settings.Default.TABLE + "")[0][0].ToString());
             double source, country, city, proto, desport, tcpflag;
             List<EntropySortElement> sortList = new List<EntropySortElement>();
 
@@ -541,7 +541,7 @@ namespace DataMiningTools
             int all_subject_data;
             double subject_sum = 0;
 
-            DataView dt_subject = sql.GetResult(string.Format("SELECT {0} FROM Logs GROUP BY {0}", subject_dimension));
+            DataView dt_subject = sql.GetResult(string.Format("SELECT {0} FROM " + Properties.Settings.Default.TABLE + " GROUP BY {0}", subject_dimension));
             all_subject_data = dt_subject.Table.Rows.Count;
 
             for (int i = 0; i < all_subject_data; i++)
@@ -549,7 +549,7 @@ namespace DataMiningTools
                 string subject = dt_subject[i][subject_dimension].ToString();
                 double count;
 
-                DataView dt1 = sql.GetResult(string.Format("SELECT Count(*) FROM Logs WHERE ({0} = '{1}')", subject_dimension, subject));
+                DataView dt1 = sql.GetResult(string.Format("SELECT Count(*) FROM " + Properties.Settings.Default.TABLE + " WHERE ({0} = '{1}')", subject_dimension, subject));
                 count = int.Parse(dt1[0][0].ToString());
 
                 subject_sum -= (count / all_data) * Math.Log((count / all_data), 2);
@@ -560,20 +560,20 @@ namespace DataMiningTools
 
         private double calcConsiderEntropyWithSubject(double all_data, string consider_dimension, string subject_dimension)
         {
-            DataView dt_consider = sql.GetResult(string.Format("SELECT {0} FROM Logs GROUP BY {0}", consider_dimension));
+            DataView dt_consider = sql.GetResult(string.Format("SELECT {0} FROM " + Properties.Settings.Default.TABLE + " GROUP BY {0}", consider_dimension));
             double consider_sum = 0;
 
             for (int i = 0; i < dt_consider.Table.Rows.Count; i++)
             {
                 string consider = dt_consider[i][consider_dimension].ToString();
 
-                double all_subject_for_consider_count = int.Parse(sql.GetResult(string.Format("SELECT Count(*) FROM Logs WHERE ({0} = '{1}')", consider_dimension, consider))[0][0].ToString());
-                DataView dt = sql.GetResult(string.Format("SELECT {0} FROM Logs WHERE ({1} = '{2}') GROUP BY {0}", subject_dimension, consider_dimension, consider));
+                double all_subject_for_consider_count = int.Parse(sql.GetResult(string.Format("SELECT Count(*) FROM " + Properties.Settings.Default.TABLE + " WHERE ({0} = '{1}')", consider_dimension, consider))[0][0].ToString());
+                DataView dt = sql.GetResult(string.Format("SELECT {0} FROM " + Properties.Settings.Default.TABLE + " WHERE ({1} = '{2}') GROUP BY {0}", subject_dimension, consider_dimension, consider));
 
                 for (int j = 0; j < dt.Table.Rows.Count; j++)
                 {
                     string subject = dt[j][subject_dimension].ToString();
-                    double count = int.Parse(sql.GetResult(string.Format("SELECT Count(*) FROM Logs WHERE ({0} = '{1}') and ({2} = '{3}')", consider_dimension, consider, subject_dimension, subject))[0][0].ToString());
+                    double count = int.Parse(sql.GetResult(string.Format("SELECT Count(*) FROM " + Properties.Settings.Default.TABLE + " WHERE ({0} = '{1}') and ({2} = '{3}')", consider_dimension, consider, subject_dimension, subject))[0][0].ToString());
 
                     consider_sum -= (count / all_subject_for_consider_count) * Math.Log((count / all_subject_for_consider_count), 2);
                 }
